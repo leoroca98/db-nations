@@ -1,16 +1,25 @@
 package org.example;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.Scanner;
 
-class Main {
+public class MySQLQueryWithFilter {
     public static void main(String[] args) {
         String jdbcUrl = "jdbc:mysql://localhost:3306/db_nations";
         String username = "root";
         String password = "33969696pp";
 
         try (Connection connection = DriverManager.getConnection(jdbcUrl, username, password);
-             Statement statement = connection.createStatement()) {
+             Scanner scanner = new Scanner(System.in)) {
 
+            System.out.print("Inserisci una stringa di ricerca: ");
+            String searchQuery = scanner.nextLine();
+
+            // Utilizza un PreparedStatement per creare una query parametrica
             String query = "SELECT " +
                     "countries.country_id, " +
                     "countries.name AS country_name, " +
@@ -19,9 +28,17 @@ class Main {
                     "FROM countries " +
                     "JOIN regions ON countries.region_id = regions.region_id " +
                     "JOIN continents ON regions.continent_id = continents.continent_id " +
-                    "ORDER BY countries.name";
+                    "WHERE countries.name LIKE ? OR " +
+                    "regions.name LIKE ? OR " +
+                    "continents.name LIKE ?";
 
-            ResultSet resultSet = statement.executeQuery(query);
+            PreparedStatement preparedStatement = connection.prepareStatement(query);
+            String searchString = "%" + searchQuery + "%"; // Aggiungi il parametro di ricerca con il LIKE
+            preparedStatement.setString(1, searchString);
+            preparedStatement.setString(2, searchString);
+            preparedStatement.setString(3, searchString);
+
+            ResultSet resultSet = preparedStatement.executeQuery();
 
             while (resultSet.next()) {
                 int countryId = resultSet.getInt("country_id");
